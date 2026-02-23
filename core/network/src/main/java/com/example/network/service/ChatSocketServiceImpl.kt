@@ -43,6 +43,14 @@ class ChatSocketServiceImpl @Inject constructor(
         send(SocketCommand.readReceipt(roomId, messageId))
     }
 
+    override fun sendGameState(boardData: String) {
+        send(SocketCommand.gameState(boardData))
+    }
+
+    override fun sendGameOver(score: Int) {
+        send(SocketCommand.gameOver(score.toString()))
+    }
+
     private fun send(command: SocketCommand) {
         val jsonStr = json.encodeToString(SocketCommand.serializer(), command)
         webSocketClient.send(jsonStr)
@@ -161,6 +169,10 @@ internal fun SocketResponse.toSocketEvent(): SocketEvent? {
             code = code ?: -1,
             message = message ?: "Unknown error"
         )
+
+        "GAME_STATE" -> SocketEvent.GameStateReceived(boardData = content ?: return null)
+
+        "GAME_OVER" -> SocketEvent.OpponentGameOver(opponentScore = content?.toIntOrNull() ?: 0)
 
         else -> null
     }

@@ -23,7 +23,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":app-config:app-config-api"))
+    api(project(":app-config:app-config-api"))
     implementation(project(":core:resource"))
 
     implementation(libs.androidx.core.ktx)

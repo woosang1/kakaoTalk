@@ -32,5 +32,8 @@ data class SocketCommand(
         )
 
         fun ping() = SocketCommand(type = "PING")
+
+        fun gameState(boardData: String) = SocketCommand(type = "GAME_STATE", content = boardData)
+        fun gameOver(score: String) = SocketCommand(type = "GAME_OVER", content = score)
     }
 }

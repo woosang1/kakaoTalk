@@ -11,6 +11,7 @@ import com.example.model.SocketEvent
 import com.example.network.service.ChatSocketService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -39,6 +40,9 @@ class ChatRepository @Inject constructor(
 
     fun getMessages(roomId: String): Flow<List<ChatMessage>> =
         chatMessageDao.getMessagesByRoom(roomId).map { entities -> entities.map { it.toDomain() } }
+
+    val gameEvents: Flow<SocketEvent> = chatSocketService.events
+        .filter { it is SocketEvent.GameStateReceived || it is SocketEvent.OpponentGameOver }
 
     fun connect() = chatSocketService.connect()
 
@@ -75,6 +79,14 @@ class ChatRepository @Inject constructor(
                 else -> Unit
             }
         }
+    }
+
+    fun sendGameState(boardData: String) {
+        chatSocketService.sendGameState(boardData)
+    }
+
+    fun sendGameOver(score: Int) {
+        chatSocketService.sendGameOver(score)
     }
 
     suspend fun resendUnsentMessages() {

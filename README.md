@@ -9,6 +9,8 @@ Jetpack Compose 기반 카카오톡 스타일 실시간 채팅 앱입니다.
 - 지수 백오프 기반 자동 재연결
 - Room 기반 로컬 메시지 캐싱
 - 카카오톡 스타일 UI/UX
+- 2인용 실시간 테트리스 대전 (WebSocket 보드 동기화)
+- 하단 탭 네비게이션 (채팅 / 게임)
 
 ## 🧱 아키텍처
 Clean Architecture + MVVM
@@ -41,6 +43,12 @@ kakaoTalk/
 │               │   ├── ChatListScreen.kt   // 채팅방 목록 화면
 │               │   ├── ChatRoomScreen.kt   // 채팅방 화면
 │               │   └── ChatViewModel.kt    // @HiltViewModel
+│               ├── game/
+│               │   ├── TetrisEngine.kt     // 테트리스 순수 게임 로직
+│               │   ├── TetrisScreen.kt     // Canvas 기반 게임 UI
+│               │   └── TetrisViewModel.kt  // 게임 루프 + WebSocket 동기화
+│               ├── main/
+│               │   └── MainScreen.kt       // 하단 탭 네비게이션
 │               └── theme/                  // 카카오톡 테마 (Color, Theme, Type)
 │
 ├── app-config/                     // 앱 설정 모듈
@@ -150,6 +158,13 @@ named("dev") {
 [+] 사용자 2 접속  (현재 2명)
 [>] 사용자 1 → room(1): 안녕하세요!
 ```
+
+### 5. 테트리스 대전
+
+1. 두 기기에서 앱 실행 → 하단 **게임** 탭 선택
+2. 양쪽 모두 **게임 시작** 버튼 터치
+3. 내 보드(오른쪽)에서 플레이, 상대 보드(왼쪽)가 실시간 동기화
+4. 조작: ◀ 좌이동, ▶ 우이동, ↻ 회전, ▼ 소프트드롭, ⬇ 하드드롭
 
 ## Screenshots
 <p align="center">

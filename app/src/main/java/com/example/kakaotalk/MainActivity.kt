@@ -13,6 +13,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.kakaotalk.ui.chat.ChatListScreen
 import com.example.kakaotalk.ui.chat.ChatRoomScreen
 import com.example.kakaotalk.ui.chat.ChatViewModel
+import com.example.kakaotalk.ui.main.MainScreen
 import com.example.kakaotalk.ui.theme.KakaoTalkTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -23,7 +24,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             KakaoTalkTheme {
-                ChatApp()
+                MainScreen()
             }
         }
     }
