@@ -72,25 +72,39 @@ class TetrisViewModel @Inject constructor(
     private val _countdown = MutableStateFlow<Int?>(null)
     val countdown: StateFlow<Int?> = _countdown.asStateFlow()
 
+    private val _playerCount = MutableStateFlow(0)
+    val playerCount: StateFlow<Int> = _playerCount.asStateFlow()
+
+    private val _debugInfo = MutableStateFlow("")
+    val debugInfo: StateFlow<String> = _debugInfo.asStateFlow()
+
     val connectionState: StateFlow<ConnectionState> = chatRepository.connectionState
 
     private var gameJob: Job? = null
     private var presenceJob: Job? = null
+    private var gameEventCount = 0
 
     init {
+        Log.d(TAG, "=== TetrisViewModel INIT ===")
         chatRepository.connect()
 
         viewModelScope.launch {
             chatRepository.connectionState.collect { state ->
-                Log.d(TAG, "Connection: $state")
+                Log.d(TAG, "Connection → $state")
+                updateDebug()
                 if (state == ConnectionState.CONNECTED && _gameMode.value == GameMode.MULTI) {
+                    Log.d(TAG, "Connected in MULTI → sending presence immediately")
                     sendCurrentState()
                 }
             }
         }
 
         viewModelScope.launch {
+            Log.d(TAG, "gameEvents collector STARTED")
             chatRepository.gameEvents.collect { event ->
+                gameEventCount++
+                Log.d(TAG, "★ gameEvent #$gameEventCount: ${event::class.simpleName}")
+                updateDebug()
                 when (event) {
                     is SocketEvent.GameStateReceived -> {
                         try {
@@ -99,6 +113,9 @@ class TetrisViewModel @Inject constructor(
                             _opponentScore.value = state.score
                             _opponentLines.value = state.linesCleared
                             _opponentLevel.value = state.level
+                            if (!_opponentConnected.value) {
+                                Log.d(TAG, "★★★ OPPONENT DETECTED! ★★★")
+                            }
                             _opponentConnected.value = true
                             _opponentGameOver.value = state.isGameOver
                         } catch (e: Exception) {
@@ -106,11 +123,20 @@ class TetrisViewModel @Inject constructor(
                         }
                     }
                     is SocketEvent.OpponentReady -> {
+                        Log.d(TAG, "★ Opponent READY received")
                         _opponentReady.value = true
                         if (_myReady.value) startCountdownAndPlay()
                     }
                     is SocketEvent.OpponentGameOver -> {
                         _opponentGameOver.value = true
+                    }
+                    is SocketEvent.PlayerCountUpdated -> {
+                        _playerCount.value = event.count
+                        val hasOpponent = event.count >= 2
+                        Log.d(TAG, "★ PLAYER_COUNT=${event.count} hasOpponent=$hasOpponent")
+                        if (_gameMode.value == GameMode.MULTI) {
+                            _opponentConnected.value = hasOpponent
+                        }
                     }
                     else -> Unit
                 }
@@ -119,8 +145,14 @@ class TetrisViewModel @Inject constructor(
     }
 
     fun selectMode(mode: GameMode) {
+        Log.d(TAG, "selectMode: $mode, playerCount=${_playerCount.value}")
         _gameMode.value = mode
         if (mode == GameMode.MULTI) {
+            _opponentConnected.value = _playerCount.value >= 2
+            if (chatRepository.connectionState.value == ConnectionState.CONNECTED) {
+                Log.d(TAG, "Already connected → sending presence NOW")
+                sendCurrentState()
+            }
             startPresenceHeartbeat()
         }
     }
@@ -144,12 +176,14 @@ class TetrisViewModel @Inject constructor(
         _myScore.value = 0
         _myLevel.value = 1
         _myLines.value = 0
+        gameEventCount = 0
         updateState()
     }
 
     fun setReady() {
         _myReady.value = true
         chatRepository.sendGameReady()
+        Log.d(TAG, "Sent GAME_READY, opponentReady=${_opponentReady.value}")
         if (_opponentReady.value) {
             startCountdownAndPlay()
         }
@@ -210,10 +244,10 @@ class TetrisViewModel @Inject constructor(
         presenceJob?.cancel()
         presenceJob = viewModelScope.launch {
             while (true) {
-                delay(PRESENCE_INTERVAL_MS)
                 if (chatRepository.connectionState.value == ConnectionState.CONNECTED) {
                     sendCurrentState()
                 }
+                delay(PRESENCE_INTERVAL_MS)
             }
         }
     }
@@ -226,7 +260,14 @@ class TetrisViewModel @Inject constructor(
     }
 
     private fun sendCurrentState() {
-        chatRepository.sendGameState(engine.serializeBoard())
+        val data = engine.serializeBoard()
+        Log.d(TAG, "⬆ sendGameState len=${data.length}")
+        chatRepository.sendGameState(data)
+    }
+
+    private fun updateDebug() {
+        val conn = chatRepository.connectionState.value
+        _debugInfo.value = "WS:$conn | players:${_playerCount.value} | events:$gameEventCount | opp:${_opponentConnected.value}"
     }
 
     private fun getTickInterval(): Long = maxOf(100L, 1000L - (engine.level - 1) * 80L)
@@ -239,7 +280,7 @@ class TetrisViewModel @Inject constructor(
 
     companion object {
         private const val TAG = "TetrisVM"
-        private const val PRESENCE_INTERVAL_MS = 2000L
+        private const val PRESENCE_INTERVAL_MS = 1500L
         private fun emptyBoard() = Array(TetrisEngine.ROWS) { IntArray(TetrisEngine.COLS) }
     }
 }

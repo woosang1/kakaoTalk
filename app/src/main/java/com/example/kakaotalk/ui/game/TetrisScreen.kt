@@ -201,6 +201,8 @@ private fun MultiPlayerContent(vm: TetrisViewModel, modifier: Modifier) {
     val myReady by vm.myReady.collectAsState()
     val countdown by vm.countdown.collectAsState()
     val connState by vm.connectionState.collectAsState()
+    val playerCount by vm.playerCount.collectAsState()
+    val debugInfo by vm.debugInfo.collectAsState()
 
     Column(
         modifier = modifier
@@ -211,9 +213,10 @@ private fun MultiPlayerContent(vm: TetrisViewModel, modifier: Modifier) {
     ) {
         Spacer(Modifier.height(6.dp))
         TopBar(title = "TETRIS BATTLE", onBack = if (!isPlaying) {{ vm.backToModeSelect() }} else null)
+        Spacer(Modifier.height(2.dp))
+        ConnectionStatusBar(connState, opponentConnected, playerCount)
+        Text(debugInfo, color = Color.White.copy(0.3f), fontSize = 8.sp)
         Spacer(Modifier.height(4.dp))
-        ConnectionStatusBar(connState, opponentConnected)
-        Spacer(Modifier.height(6.dp))
 
         Row(
             modifier = Modifier
@@ -324,12 +327,12 @@ private fun TopBar(title: String, onBack: (() -> Unit)? = null) {
 }
 
 @Composable
-private fun ConnectionStatusBar(state: ConnectionState, opponentConnected: Boolean) {
+private fun ConnectionStatusBar(state: ConnectionState, opponentConnected: Boolean, playerCount: Int) {
     val (text, dotColor) = when {
-        state == ConnectionState.CONNECTED && opponentConnected -> "연결됨 · 상대방 접속 중" to Color(0xFF66BB6A)
-        state == ConnectionState.CONNECTED -> "연결됨 · 상대방 대기" to Color(0xFFFFA726)
-        state == ConnectionState.CONNECTING || state == ConnectionState.RECONNECTING -> "연결 중..." to Color(0xFFFFA726)
-        else -> "연결 안됨" to Color(0xFFEF5350)
+        state == ConnectionState.CONNECTED && opponentConnected -> "서버 접속 ${playerCount}명 · 상대방 감지됨" to Color(0xFF66BB6A)
+        state == ConnectionState.CONNECTED -> "서버 접속 ${playerCount}명 · 상대방 대기" to Color(0xFFFFA726)
+        state == ConnectionState.CONNECTING || state == ConnectionState.RECONNECTING -> "서버 연결 중..." to Color(0xFFFFA726)
+        else -> "서버 연결 안됨" to Color(0xFFEF5350)
     }
     Row(
         Modifier.fillMaxWidth().background(BG_CARD, RoundedCornerShape(6.dp)).padding(horizontal = 12.dp, vertical = 5.dp),

@@ -7,9 +7,14 @@ import com.example.model.ConnectionState
 import com.example.model.SocketCommand
 import com.example.model.SocketEvent
 import com.example.network.websocket.WebSocketClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -21,13 +26,35 @@ class ChatSocketServiceImpl @Inject constructor(
     private val json: Json
 ) : ChatSocketService {
 
-    override val connectionState: StateFlow<ConnectionState> = webSocketClient.connectionState
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    override val events: Flow<SocketEvent> = webSocketClient.incomingMessages
-        .mapNotNull { raw -> parseEvent(raw) }
+    private val _chatEvents = MutableSharedFlow<SocketEvent>(extraBufferCapacity = 256)
+    private val _gameEvents = MutableSharedFlow<SocketEvent>(extraBufferCapacity = 64, replay = 5)
+
+    override val connectionState: StateFlow<ConnectionState> = webSocketClient.connectionState
+    override val events: Flow<SocketEvent> = _chatEvents.asSharedFlow()
+    override val gameEvents: Flow<SocketEvent> = _gameEvents.asSharedFlow()
+
+    init {
+        scope.launch {
+            webSocketClient.incomingMessages.collect { raw ->
+                val event = parseEvent(raw) ?: return@collect
+                when (event) {
+                    is SocketEvent.GameStateReceived,
+                    is SocketEvent.OpponentGameOver,
+                    is SocketEvent.OpponentReady,
+                    is SocketEvent.PlayerCountUpdated -> {
+                        Log.d(TAG, "→ gameEvents: ${event::class.simpleName}")
+                        _gameEvents.emit(event)
+                    }
+                    else -> {}
+                }
+                _chatEvents.emit(event)
+            }
+        }
+    }
 
     override fun connect() = webSocketClient.connect()
-
     override fun disconnect() = webSocketClient.disconnect()
 
     override fun sendMessage(roomId: String, content: String) {
@@ -35,9 +62,7 @@ class ChatSocketServiceImpl @Inject constructor(
     }
 
     override fun joinRoom(roomId: String) = send(SocketCommand.joinRoom(roomId))
-
     override fun leaveRoom(roomId: String) = send(SocketCommand.leaveRoom(roomId))
-
     override fun sendTyping(roomId: String) = send(SocketCommand.typing(roomId))
 
     override fun sendReadReceipt(roomId: String, messageId: String) {
@@ -66,11 +91,13 @@ class ChatSocketServiceImpl @Inject constructor(
             val response = json.decodeFromString<SocketResponse>(raw)
             val event = response.toSocketEvent()
             if (event == null) {
-                Log.w(TAG, "toSocketEvent returned null for type=${response.type}")
+                Log.w(TAG, "toSocketEvent null for type=${response.type}")
+            } else {
+                Log.d(TAG, "⬇ RECV type=${response.type} → ${event::class.simpleName}")
             }
             event
         } catch (e: Exception) {
-            Log.e(TAG, "parseEvent failed: ${e.message}, raw=${raw.take(200)}")
+            Log.e(TAG, "parseEvent FAIL: ${e.message}, raw=${raw.take(200)}")
             null
         }
     }
@@ -185,10 +212,9 @@ internal fun SocketResponse.toSocketEvent(): SocketEvent? {
         )
 
         "GAME_STATE" -> SocketEvent.GameStateReceived(boardData = content ?: return null)
-
         "GAME_OVER" -> SocketEvent.OpponentGameOver(opponentScore = content?.toIntOrNull() ?: 0)
-
         "GAME_READY" -> SocketEvent.OpponentReady
+        "PLAYER_COUNT" -> SocketEvent.PlayerCountUpdated(count = content?.toIntOrNull() ?: 0)
 
         else -> null
     }

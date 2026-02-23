@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 interface ChatSocketService {
     val connectionState: StateFlow<ConnectionState>
     val events: Flow<SocketEvent>
+    val gameEvents: Flow<SocketEvent>
 
     fun connect()
     fun disconnect()

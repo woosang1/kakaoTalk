@@ -71,12 +71,13 @@ class WebSocketClient @Inject constructor(
     }
 
     fun send(message: String): Boolean {
+        val type = message.substringAfter("\"type\":\"", "?").substringBefore("\"")
         return if (_connectionState.value == ConnectionState.CONNECTED) {
             val sent = webSocket?.send(message) ?: false
-            if (!sent) Log.w(TAG, "send failed (ws null)")
+            Log.d(TAG, "⬆ SEND [$type] ok=$sent len=${message.length}")
             sent
         } else {
-            Log.d(TAG, "Queued (state=${_connectionState.value})")
+            Log.w(TAG, "⬆ QUEUED [$type] (state=${_connectionState.value})")
             messageQueue.offer(message)
             false
         }
@@ -104,8 +105,10 @@ class WebSocketClient @Inject constructor(
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
+            val type = text.substringAfter("\"type\":\"", "?").substringBefore("\"")
+            val subs = _incomingMessages.subscriptionCount.value
             val emitted = _incomingMessages.tryEmit(text)
-            if (!emitted) Log.w(TAG, "SharedFlow buffer full, message dropped")
+            Log.d(TAG, "⬇ MSG [$type] emitted=$emitted subs=$subs len=${text.length}")
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {

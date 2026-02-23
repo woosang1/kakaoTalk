@@ -168,8 +168,9 @@ named("dev") {
 
 ## Screenshots
 <p align="center">
-  <img src="screenshots/chat_list.png" width="250" alt="Chat List">
-  <img src="screenshots/chat_room.png" width="250" alt="Chat Room">
+  <img src="screenshots/1.png" width="250" alt="Chat List">
+  <img src="screenshots/2.png" width="250" alt="Game1">
+  <img src="screenshots/3.png" width="250" alt="Game2">
 </p>
 
 ## 📦 의존 그래프
