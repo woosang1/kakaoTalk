@@ -18,7 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.kakaotalk.model.ChatMessage
+import com.example.model.ChatMessage
 import com.example.kakaotalk.ui.theme.KakaoChatBackground
 import com.example.kakaotalk.ui.theme.KakaoMessageBackground
 import com.example.kakaotalk.ui.theme.KakaoMessageBackgroundOther

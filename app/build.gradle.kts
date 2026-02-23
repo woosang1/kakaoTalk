@@ -31,10 +31,14 @@ dependencies {
     implementation(project(":core:base"))
     implementation(project(":core:ui"))
     implementation(project(":core:utils"))
+    implementation(project(":core:model"))
+    implementation(project(":core:network"))
+    implementation(project(":core:database"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.kotlinx.collections.immutable)
     implementation(libs.coil.compose)
 

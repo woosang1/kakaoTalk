@@ -13,7 +13,7 @@ android {
     productFlavors {
         named("dev") {
             buildConfigField("Boolean", "IS_TEST_SERVER", "true")
-            buildConfigField("String", "BASE_URL", "\"ws://localhost:8080/\"")
+            buildConfigField("String", "BASE_URL", "\"ws://192.168.0.38:8080/\"")
         }
         named("prod") {
             buildConfigField("Boolean", "IS_TEST_SERVER", "false")

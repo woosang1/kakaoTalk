@@ -17,7 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.kakaotalk.model.ChatRoom
+import com.example.model.ChatRoom
 import com.example.kakaotalk.ui.theme.KakaoChatBackground
 import com.example.kakaotalk.ui.theme.KakaoDivider
 import com.example.kakaotalk.ui.theme.KakaoTextPrimary

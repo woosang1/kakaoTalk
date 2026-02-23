@@ -31,6 +31,9 @@ include(":app")
 include(":app-config:app-config")
 include(":app-config:app-config-api")
 
+// Server Module (Ktor WebSocket)
+include(":server")
+
 // Core Modules
 include(":core:ui")
 include(":core:designsystem")
