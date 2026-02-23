@@ -1,5 +1,6 @@
 package com.example.network.websocket
 
+import android.util.Log
 import com.example.app_config_api.AppConfig
 import com.example.model.ConnectionState
 import kotlinx.coroutines.CoroutineScope
@@ -71,8 +72,11 @@ class WebSocketClient @Inject constructor(
 
     fun send(message: String): Boolean {
         return if (_connectionState.value == ConnectionState.CONNECTED) {
-            webSocket?.send(message) ?: false
+            val sent = webSocket?.send(message) ?: false
+            if (!sent) Log.w(TAG, "send failed (ws null)")
+            sent
         } else {
+            Log.d(TAG, "Queued (state=${_connectionState.value})")
             messageQueue.offer(message)
             false
         }
@@ -93,16 +97,19 @@ class WebSocketClient @Inject constructor(
 
     private fun createListener() = object : WebSocketListener() {
         override fun onOpen(webSocket: WebSocket, response: Response) {
+            Log.d(TAG, "WebSocket OPEN → ${appConfig.baseUrl}")
             _connectionState.value = ConnectionState.CONNECTED
             reconnectionStrategy.reset()
             flushMessageQueue()
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
-            _incomingMessages.tryEmit(text)
+            val emitted = _incomingMessages.tryEmit(text)
+            if (!emitted) Log.w(TAG, "SharedFlow buffer full, message dropped")
         }
 
         override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+            Log.e(TAG, "WebSocket FAILURE: ${t.message}")
             this@WebSocketClient.webSocket = null
             _connectionState.value = ConnectionState.DISCONNECTED
             if (!isManuallyDisconnected) {
@@ -149,6 +156,7 @@ class WebSocketClient @Inject constructor(
     }
 
     companion object {
+        private const val TAG = "WebSocketClient"
         private const val NORMAL_CLOSURE = 1000
     }
 }

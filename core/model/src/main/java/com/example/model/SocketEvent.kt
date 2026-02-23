@@ -9,4 +9,5 @@ sealed interface SocketEvent {
     data class Error(val code: Int, val message: String) : SocketEvent
     data class GameStateReceived(val boardData: String) : SocketEvent
     data class OpponentGameOver(val opponentScore: Int) : SocketEvent
+    data object OpponentReady : SocketEvent
 }

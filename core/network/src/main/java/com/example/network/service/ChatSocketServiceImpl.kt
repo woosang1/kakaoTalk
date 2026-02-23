@@ -1,5 +1,6 @@
 package com.example.network.service
 
+import android.util.Log
 import com.example.model.ChatMessage
 import com.example.model.ChatRoom
 import com.example.model.ConnectionState
@@ -51,6 +52,10 @@ class ChatSocketServiceImpl @Inject constructor(
         send(SocketCommand.gameOver(score.toString()))
     }
 
+    override fun sendGameReady() {
+        send(SocketCommand.gameReady())
+    }
+
     private fun send(command: SocketCommand) {
         val jsonStr = json.encodeToString(SocketCommand.serializer(), command)
         webSocketClient.send(jsonStr)
@@ -59,10 +64,19 @@ class ChatSocketServiceImpl @Inject constructor(
     private fun parseEvent(raw: String): SocketEvent? {
         return try {
             val response = json.decodeFromString<SocketResponse>(raw)
-            response.toSocketEvent()
-        } catch (_: Exception) {
+            val event = response.toSocketEvent()
+            if (event == null) {
+                Log.w(TAG, "toSocketEvent returned null for type=${response.type}")
+            }
+            event
+        } catch (e: Exception) {
+            Log.e(TAG, "parseEvent failed: ${e.message}, raw=${raw.take(200)}")
             null
         }
+    }
+
+    companion object {
+        private const val TAG = "ChatSocket"
     }
 }
 
@@ -173,6 +187,8 @@ internal fun SocketResponse.toSocketEvent(): SocketEvent? {
         "GAME_STATE" -> SocketEvent.GameStateReceived(boardData = content ?: return null)
 
         "GAME_OVER" -> SocketEvent.OpponentGameOver(opponentScore = content?.toIntOrNull() ?: 0)
+
+        "GAME_READY" -> SocketEvent.OpponentReady
 
         else -> null
     }

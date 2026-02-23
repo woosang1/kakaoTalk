@@ -42,7 +42,11 @@ class ChatRepository @Inject constructor(
         chatMessageDao.getMessagesByRoom(roomId).map { entities -> entities.map { it.toDomain() } }
 
     val gameEvents: Flow<SocketEvent> = chatSocketService.events
-        .filter { it is SocketEvent.GameStateReceived || it is SocketEvent.OpponentGameOver }
+        .filter {
+            it is SocketEvent.GameStateReceived ||
+            it is SocketEvent.OpponentGameOver ||
+            it is SocketEvent.OpponentReady
+        }
 
     fun connect() = chatSocketService.connect()
 
@@ -87,6 +91,10 @@ class ChatRepository @Inject constructor(
 
     fun sendGameOver(score: Int) {
         chatSocketService.sendGameOver(score)
+    }
+
+    fun sendGameReady() {
+        chatSocketService.sendGameReady()
     }
 
     suspend fun resendUnsentMessages() {

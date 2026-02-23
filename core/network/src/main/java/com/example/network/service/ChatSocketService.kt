@@ -18,4 +18,5 @@ interface ChatSocketService {
     fun sendReadReceipt(roomId: String, messageId: String)
     fun sendGameState(boardData: String)
     fun sendGameOver(score: Int)
+    fun sendGameReady()
 }

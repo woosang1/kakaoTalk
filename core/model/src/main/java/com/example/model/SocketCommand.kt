@@ -35,5 +35,6 @@ data class SocketCommand(
 
         fun gameState(boardData: String) = SocketCommand(type = "GAME_STATE", content = boardData)
         fun gameOver(score: String) = SocketCommand(type = "GAME_OVER", content = score)
+        fun gameReady() = SocketCommand(type = "GAME_READY")
     }
 }
