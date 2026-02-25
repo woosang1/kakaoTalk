@@ -36,5 +36,11 @@ data class SocketCommand(
         fun gameState(boardData: String) = SocketCommand(type = "GAME_STATE", content = boardData)
         fun gameOver(score: String) = SocketCommand(type = "GAME_OVER", content = score)
         fun gameReady() = SocketCommand(type = "GAME_READY")
+        fun drawSyncRequest() = SocketCommand(type = "DRAW_SYNC_REQUEST")
+        fun drawSetLimit(count: Int) = SocketCommand(type = "DRAW_SET_LIMIT", content = count.toString())
+        fun drawHold(index: Int) = SocketCommand(type = "DRAW_HOLD", content = index.toString())
+        fun drawRelease(index: Int) = SocketCommand(type = "DRAW_RELEASE", content = index.toString())
+        fun drawPick(index: Int) = SocketCommand(type = "DRAW_PICK", content = index.toString())
+        fun drawReset() = SocketCommand(type = "DRAW_RESET")
     }
 }

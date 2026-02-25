@@ -9,6 +9,7 @@ interface ChatSocketService {
     val connectionState: StateFlow<ConnectionState>
     val events: Flow<SocketEvent>
     val gameEvents: Flow<SocketEvent>
+    val gachaEvents: Flow<SocketEvent>
 
     fun connect()
     fun disconnect()
@@ -20,4 +21,10 @@ interface ChatSocketService {
     fun sendGameState(boardData: String)
     fun sendGameOver(score: Int)
     fun sendGameReady()
+    fun sendDrawSyncRequest()
+    fun sendDrawSetLimit(count: Int)
+    fun sendDrawHold(index: Int)
+    fun sendDrawRelease(index: Int)
+    fun sendDrawPick(index: Int)
+    fun sendDrawReset()
 }

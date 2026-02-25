@@ -30,10 +30,12 @@ class ChatSocketServiceImpl @Inject constructor(
 
     private val _chatEvents = MutableSharedFlow<SocketEvent>(extraBufferCapacity = 256)
     private val _gameEvents = MutableSharedFlow<SocketEvent>(extraBufferCapacity = 64, replay = 5)
+    private val _gachaEvents = MutableSharedFlow<SocketEvent>(extraBufferCapacity = 64, replay = 10)
 
     override val connectionState: StateFlow<ConnectionState> = webSocketClient.connectionState
     override val events: Flow<SocketEvent> = _chatEvents.asSharedFlow()
     override val gameEvents: Flow<SocketEvent> = _gameEvents.asSharedFlow()
+    override val gachaEvents: Flow<SocketEvent> = _gachaEvents.asSharedFlow()
 
     init {
         scope.launch {
@@ -46,6 +48,19 @@ class ChatSocketServiceImpl @Inject constructor(
                     is SocketEvent.PlayerCountUpdated -> {
                         Log.d(TAG, "→ gameEvents: ${event::class.simpleName}")
                         _gameEvents.emit(event)
+                    }
+                    else -> {}
+                }
+                when (event) {
+                    is SocketEvent.DrawSyncReceived,
+                    is SocketEvent.DrawPicked,
+                    is SocketEvent.DrawHeld,
+                    is SocketEvent.DrawReleased,
+                    is SocketEvent.DrawLimitUpdated,
+                    is SocketEvent.DrawReseted,
+                    is SocketEvent.DrawRejected -> {
+                        Log.d(TAG, "→ gachaEvents: ${event::class.simpleName}")
+                        _gachaEvents.emit(event)
                     }
                     else -> {}
                 }
@@ -79,6 +94,30 @@ class ChatSocketServiceImpl @Inject constructor(
 
     override fun sendGameReady() {
         send(SocketCommand.gameReady())
+    }
+
+    override fun sendDrawSyncRequest() {
+        send(SocketCommand.drawSyncRequest())
+    }
+
+    override fun sendDrawSetLimit(count: Int) {
+        send(SocketCommand.drawSetLimit(count))
+    }
+
+    override fun sendDrawHold(index: Int) {
+        send(SocketCommand.drawHold(index))
+    }
+
+    override fun sendDrawRelease(index: Int) {
+        send(SocketCommand.drawRelease(index))
+    }
+
+    override fun sendDrawPick(index: Int) {
+        send(SocketCommand.drawPick(index))
+    }
+
+    override fun sendDrawReset() {
+        send(SocketCommand.drawReset())
     }
 
     private fun send(command: SocketCommand) {
@@ -215,6 +254,35 @@ internal fun SocketResponse.toSocketEvent(): SocketEvent? {
         "GAME_OVER" -> SocketEvent.OpponentGameOver(opponentScore = content?.toIntOrNull() ?: 0)
         "GAME_READY" -> SocketEvent.OpponentReady
         "PLAYER_COUNT" -> SocketEvent.PlayerCountUpdated(count = content?.toIntOrNull() ?: 0)
+        "DRAW_SYNC" -> SocketEvent.DrawSyncReceived(boardData = content ?: "")
+        "DRAW_PICKED" -> {
+            val parts = content?.split("|") ?: return null
+            if (parts.size < 3) return null
+            SocketEvent.DrawPicked(
+                index = parts[0].toIntOrNull() ?: return null,
+                rank = parts[1].toIntOrNull() ?: 0,
+                byUser = parts[2]
+            )
+        }
+        "DRAW_HELD" -> {
+            val parts = content?.split("|") ?: return null
+            if (parts.size < 2) return null
+            SocketEvent.DrawHeld(
+                index = parts[0].toIntOrNull() ?: return null,
+                byUser = parts[1]
+            )
+        }
+        "DRAW_RELEASED" -> SocketEvent.DrawReleased(index = content?.toIntOrNull() ?: return null)
+        "DRAW_LIMIT" -> {
+            val parts = content?.split("|") ?: return null
+            if (parts.size < 2) return null
+            SocketEvent.DrawLimitUpdated(
+                total = parts[0].toIntOrNull() ?: 0,
+                remaining = parts[1].toIntOrNull() ?: 0
+            )
+        }
+        "DRAW_RESETED" -> SocketEvent.DrawReseted
+        "DRAW_REJECT" -> SocketEvent.DrawRejected(reason = content ?: "이미 뽑힌 칸입니다.")
 
         else -> null
     }

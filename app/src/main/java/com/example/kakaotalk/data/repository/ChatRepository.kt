@@ -11,7 +11,6 @@ import com.example.model.SocketEvent
 import com.example.network.service.ChatSocketService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -41,12 +40,8 @@ class ChatRepository @Inject constructor(
     fun getMessages(roomId: String): Flow<List<ChatMessage>> =
         chatMessageDao.getMessagesByRoom(roomId).map { entities -> entities.map { it.toDomain() } }
 
-    val gameEvents: Flow<SocketEvent> = chatSocketService.events
-        .filter {
-            it is SocketEvent.GameStateReceived ||
-            it is SocketEvent.OpponentGameOver ||
-            it is SocketEvent.OpponentReady
-        }
+    val gameEvents: Flow<SocketEvent> = chatSocketService.gameEvents
+    val gachaEvents: Flow<SocketEvent> = chatSocketService.gachaEvents
 
     fun connect() = chatSocketService.connect()
 
@@ -95,6 +90,30 @@ class ChatRepository @Inject constructor(
 
     fun sendGameReady() {
         chatSocketService.sendGameReady()
+    }
+
+    fun requestDrawSync() {
+        chatSocketService.sendDrawSyncRequest()
+    }
+
+    fun setDrawLimit(count: Int) {
+        chatSocketService.sendDrawSetLimit(count)
+    }
+
+    fun holdDraw(index: Int) {
+        chatSocketService.sendDrawHold(index)
+    }
+
+    fun releaseDraw(index: Int) {
+        chatSocketService.sendDrawRelease(index)
+    }
+
+    fun pickDraw(index: Int) {
+        chatSocketService.sendDrawPick(index)
+    }
+
+    fun resetDraw() {
+        chatSocketService.sendDrawReset()
     }
 
     suspend fun resendUnsentMessages() {

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -22,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.kakaotalk.ChatApp
+import com.example.kakaotalk.ui.gacha.GachaScreen
 import com.example.kakaotalk.ui.game.TetrisScreen
 
 private data class TabItem(
@@ -31,7 +33,8 @@ private data class TabItem(
 
 private val tabs = listOf(
     TabItem("채팅", Icons.Filled.Email),
-    TabItem("게임", Icons.Filled.PlayArrow)
+    TabItem("게임", Icons.Filled.PlayArrow),
+    TabItem("뽑기", Icons.Filled.Star)
 )
 
 @Composable
@@ -76,6 +79,7 @@ fun MainScreen() {
         when (selectedTab) {
             0 -> ChatApp(modifier = Modifier.padding(innerPadding))
             1 -> TetrisScreen(modifier = Modifier.padding(innerPadding))
+            2 -> GachaScreen(modifier = Modifier.padding(innerPadding))
         }
     }
 }
